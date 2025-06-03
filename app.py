@@ -32,7 +32,7 @@ def start_prank_window():
     root.attributes('-topmost', True)
     root.protocol("WM_DELETE_WINDOW", lambda: None)  # Disable close
 
-    label = tk.Label(root, text="💀 SYSTEM LOCKED 💀\nPress ALT + SHIFT + F to unlock",
+    label = tk.Label(root, text="💀 SYSTEM LOCKED 💀\nEnter the Secret combination to unlock this system!",
                      font=("Segoe UI", 28), fg="lime", bg="black")
     label.pack(expand=True)
 
