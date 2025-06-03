@@ -5,6 +5,7 @@ import time
 import keyboard
 import mouse
 import ctypes
+import sys
 
 last_activity_time = time.time()
 window_active = False
@@ -29,43 +30,29 @@ def start_prank_window():
     root.attributes('-fullscreen', True)
     root.configure(bg='black')
     root.attributes('-topmost', True)
-    root.protocol("WM_DELETE_WINDOW", lambda: None)
+    root.protocol("WM_DELETE_WINDOW", lambda: None)  # Disable close
 
-    label = tk.Label(root, text="💀 SYSTEM LOCKED 💀\nPress ALT + SHIFT + F to unlock",
+    label = tk.Label(root, text="💀 SYSTEM LOCKED 💀\nEnter the Secret combination to unlock this system!",
                      font=("Segoe UI", 28), fg="lime", bg="black")
     label.pack(expand=True)
 
-    prank_label = tk.Label(root, text="😈 You left your system idle 😈",
-                           font=("Segoe UI", 20), fg="red", bg="black")
-    prank_label.place(x=0, y=0)
-
-    threading.Thread(target=move_label_smooth, args=(prank_label,), daemon=True).start()
+    threading.Thread(target=move_window, daemon=True).start()
     threading.Thread(target=check_exit_hotkey, daemon=True).start()
 
     disable_task_switching()
 
     root.mainloop()
 
-def move_label_smooth(label):
-    global root, window_active
-    screen_w = root.winfo_screenwidth()
-    screen_h = root.winfo_screenheight()
-    w, h = 350, 50  # approx size of label
-
-    x, y = random.randint(0, screen_w - w), random.randint(0, screen_h - h)
-    dx, dy = 5, 5  # speed
-
+def move_window():
+    global root
+    prank_label = tk.Label(root, text="😈 You left your system idle 😈",
+                           font=("Segoe UI", 20), fg="red", bg="black")
+    prank_label.place(x=0, y=0)
     while window_active:
-        x += dx
-        y += dy
-
-        if x <= 0 or x + w >= screen_w:
-            dx = -dx
-        if y <= 0 or y + h >= screen_h:
-            dy = -dy
-
-        label.place(x=x, y=y)
-        time.sleep(0.01)
+        x = random.randint(0, root.winfo_screenwidth() - 300)
+        y = random.randint(0, root.winfo_screenheight() - 50)
+        prank_label.place(x=x, y=y)
+        time.sleep(0.5)
 
 def check_exit_hotkey():
     global window_active, root
@@ -80,6 +67,7 @@ def check_exit_hotkey():
         time.sleep(0.1)
 
 def disable_task_switching():
+    # Disable Alt+Tab, Win keys
     user32 = ctypes.WinDLL('user32')
     user32.BlockInput(True)
 
