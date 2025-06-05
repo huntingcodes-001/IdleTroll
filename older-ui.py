@@ -6,8 +6,6 @@ import keyboard
 import mouse
 import ctypes
 import os
-import pyttsx3
-
 
 last_activity_time = time.time()
 window_active = False
@@ -21,7 +19,7 @@ def update_last_activity(event=None):
 def monitor_idle_time():
     global window_active
     while True:
-        if not window_active and time.time() - last_activity_time > 5:
+        if not window_active and time.time() - last_activity_time > 5:  # idle timeout
             start_prank_window()
         time.sleep(1)
 
@@ -38,16 +36,20 @@ def start_prank_window():
     root.protocol("WM_DELETE_WINDOW", lambda: None)
     root.config(cursor="none")
 
+    # Matrix rain canvas
     canvas = tk.Canvas(root, bg='black', highlightthickness=0)
     canvas.pack(fill='both', expand=True)
     threading.Thread(target=matrix_rain, args=(canvas,), daemon=True).start()
 
+    # Central glitch text
     glitch_label = tk.Label(root, text="💀 SYSTEM LOCKED 💀",
                             font=("Consolas", 42, "bold"),
                             fg="lime", bg="black")
     glitch_label.place(relx=0.5, rely=0.4, anchor='center')
 
     threading.Thread(target=glitch_text_effect, args=(glitch_label,), daemon=True).start()
+
+    # Moving warning text
     threading.Thread(target=move_warning_text, args=(root,), daemon=True).start()
     threading.Thread(target=check_exit_hotkey, daemon=True).start()
     threading.Thread(target=key_blocker, daemon=True).start()
@@ -67,11 +69,14 @@ def matrix_rain(canvas):
             char = random.choice(letters)
             x = i * font_size
             y = drops[i] * font_size
+
             canvas.create_text(x, y, text=char, fill="lime",
                                font=('Consolas', font_size, 'bold'), tags="matrix")
+
             drops[i] += 1
             if y > canvas.winfo_screenheight() and random.random() > 0.975:
                 drops[i] = 0
+
         canvas.update()
         time.sleep(0.05)
 
@@ -94,63 +99,25 @@ def move_warning_text(root):
     while window_active:
         x += dx
         y += dy
+
         if x <= 0 or x >= screen_width - 400:
             dx = -dx
         if y <= 0 or y >= screen_height - 50:
             dy = -dy
+
         warning.place(x=x, y=y)
         time.sleep(0.02)
 
-engine = pyttsx3.init()
-engine.setProperty('rate', 150)
-
-def speak_insult():
-    engine.say("Go Get a life")
-    engine.runAndWait()
-
-
-
 def key_blocker():
-    global alt_pressed
     def on_key(event):
         global alt_pressed
         if event.event_type == 'down':
             if event.name == 'alt':
                 alt_pressed = True
             else:
-                if alt_pressed:
-                    if event.name in ['tab', 'esc', 'left windows', 'right windows']:
-                        os.system('rundll32.exe user32.dll,LockWorkStation')
-                    return
-
-                # Any other key triggers insult TTS
-                threading.Thread(target=speak_insult, daemon=True).start()
-                os.system('rundll32.exe user32.dll,LockWorkStation')
-
-        if event.event_type == 'up' and event.name == 'alt':
-            alt_pressed = False
-
-    keyboard.hook(on_key)
-
-    global alt_pressed
-    def on_key(event):
-        global alt_pressed
-        if event.event_type == 'down':
-            if event.name == 'alt':
-                alt_pressed = True
-            else:
-                # Block everything if Alt was pressed first
-                if alt_pressed:
-                    if event.name in ['tab', 'esc', 'left windows', 'right windows']:
-                        os.system('rundll32.exe user32.dll,LockWorkStation')
-                    # let it pass to check exit combo
-                    return
-
-                # Block all other keys (if not alt first)
-                os.system('rundll32.exe user32.dll,LockWorkStation')
-
-        if event.event_type == 'up' and event.name == 'alt':
-            alt_pressed = False
+                if not alt_pressed:
+                    os.system('rundll32.exe user32.dll,LockWorkStation')
+                    return False
 
     keyboard.hook(on_key)
 
