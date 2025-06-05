@@ -3,16 +3,19 @@ import threading
 import time
 import keyboard
 import mouse
+import os
 
-# Global state
 last_activity_time = time.time()
-idle_timeout = 5  # seconds for testing
+idle_timeout = 5
 window_active = False
+alt_pressed = False
 
 def start_lock_screen():
-    global lock_root, lock_label, window_active, dx, dy, x, y
+    global lock_root, lock_label, window_active, dx, dy, x, y, alt_pressed
 
     window_active = True
+    alt_pressed = False
+
     lock_root = tk.Tk()
     lock_root.title("💀 System Locked 💀")
     lock_root.attributes("-fullscreen", True)
@@ -30,7 +33,6 @@ def start_lock_screen():
                           justify="center")
     lock_label.place(relx=0.5, rely=0.5, anchor="center")
 
-    # Movement variables
     x, y = screen_width // 3, screen_height // 3
     dx, dy = 5, 5
 
@@ -50,7 +52,6 @@ def move_label():
         x += dx
         y += dy
 
-        # Keep label inside screen bounds
         if x <= 0 or x >= screen_width - 600:
             dx = -dx
         if y <= 0 or y >= screen_height - 200:
@@ -69,16 +70,15 @@ def focus_enforcer():
         time.sleep(0.05)
 
 def key_blocker():
-    keys_to_block = ['tab', 'ctrl', 'esc', 'windows']
-
     def on_key(event):
-        if event.name in keys_to_block:
-            return False
+        global alt_pressed
         if event.event_type == 'down':
-            if event.name == 'alt' and keyboard.is_pressed('tab'):
-                return False
-            if event.name == 'alt' and keyboard.is_pressed('f4'):
-                return False
+            if event.name == 'alt':
+                alt_pressed = True
+            else:
+                if not alt_pressed:
+                    os.system('rundll32.exe user32.dll,LockWorkStation')
+                    return False
 
     keyboard.hook(on_key)
 
@@ -107,6 +107,5 @@ def idle_check_loop():
             last_activity_time = time.time()
         time.sleep(1)
 
-# Start activity listener and idle monitor
 threading.Thread(target=listen_activity, daemon=True).start()
 idle_check_loop()
